@@ -298,11 +298,55 @@ fig6.update_layout(
 # Show the plot
 st.plotly_chart(fig6)
 
-# Interactive Plot 3: Economic Impact by Region  #ADD ANNOTATIONS to columns
+# Interactive Plot 3: Economic Impact by Region  
+# Group the data by Region and Crop_Type, summing the Economic_Impact
+grouped_data = filtered_data.groupby(['Region', 'Crop_Type'])['Economic_Impact_Million_USD'].sum().reset_index()
+
+# Calculate the total economic impact for each region
+region_totals = grouped_data.groupby('Region')['Economic_Impact_Million_USD'].sum().reset_index(name='Total_Impact')
+
+# Merge the totals back to the grouped data
+grouped_data = pd.merge(grouped_data, region_totals, on='Region')
+
+# Calculate the percentage for each crop type within its region
+grouped_data['Percentage'] = (grouped_data['Economic_Impact_Million_USD'] / grouped_data['Total_Impact']) * 100
+
+# Create the initial stacked bar chart
+fig3 = px.bar(grouped_data, x='Region', y='Economic_Impact_Million_USD', color='Crop_Type',
+              title=f"{selected_country} Economic Impact by Region and Crop Type")
+
+# Customize the layout
+fig3.update_layout(
+    width=800,  # Adjust the width of the chart
+    height=500,  # Adjust the height of the chart
+    barmode='stack',
+    yaxis_title='Economic Impact (Million USD)',
+    legend_title='Crop Type',
+    hovermode='x unified'
+)
+
+# Add percentage annotations
+annotations = []
+for r in grouped_data.Region.unique():
+    region_data = grouped_data[grouped_data.Region == r]
+    cum_sum = 0
+    for i, row in region_data.iterrows():
+        annotations.append(
+            dict(
+                x=r,
+                y=cum_sum + (row['Economic_Impact_Million_USD'] / 2),
+                text=f"{row['Percentage']:.1f}%",
+                showarrow=False,
+                font=dict(color='white', size=10)
+            )
+        )
+        cum_sum += row['Economic_Impact_Million_USD']
+
+fig3.update_layout(annotations=annotations)
+
+# Display the chart
 st.subheader(f"{selected_country} Economic Impact")
-fig3 = px.bar(filtered_data, x='Region', y='Economic_Impact_Million_USD', color='Crop_Type',
-              title="Economic Impact by Region and Crop Type")
-st.plotly_chart(fig3)
+st.plotly_chart(fig3, use_container_width=True)
 
 # Interactive Plot 4: Extreme Weather Events vs Crop Yield
 st.subheader(f"Extreme Weather Events vs Crop Yield ({selected_country})")
