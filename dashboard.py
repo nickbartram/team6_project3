@@ -29,42 +29,44 @@ st.title("Climate Change Impact on Agriculture Dashboard")
 
 # Sidebar filters
 st.sidebar.header("Filters")
-selected_country = st.sidebar.selectbox("Select Country", options=data['Country'].unique())
+
+# Add a Country filter option
+country_options = sorted(data['Country'].unique().tolist())
+selected_country = st.sidebar.selectbox("Select Country", options=country_options, index=0)
+
+# Initialize filtered_data with the full dataset
 filtered_data = data[data['Country'] == selected_country]
 
-selected_region = st.sidebar.selectbox("Select Region", options=filtered_data['Region'].unique())
-filtered_data = filtered_data[filtered_data['Region'] == selected_region]
 
+# Add a Region filter with "All Regions" option
+region_options = ['All Regions'] + sorted(filtered_data['Region'].unique().tolist())
+selected_region = st.sidebar.selectbox("Select Region", options=region_options)
 
-#Step 1 Aggregate mean values of continuous variables over time. Focus on avg temp and crop yield
-mean_data_avgTemp_cropYield = filtered_data.groupby('Year').mean(numeric_only=True)[['Average_Temperature_C', 'Crop_Yield_MT_per_HA']]
-movingAvg_avgTemp_cropYield = mean_data_avgTemp_cropYield.rolling(window=5).mean()
-
-
-
-
-#ADD ALL REGION AND ALL COUNTRY DEFAULTS
-
-
-
-
-
-
+# Apply Region filter
+if selected_region != 'All Regions':
+    filtered_data = filtered_data[filtered_data['Region'] == selected_region]
 
 # Add a Crop Type filter with "All Crops" option
-crop_type_options = ['All Crops'] + list(filtered_data['Crop_Type'].unique())
+crop_type_options = ['All Crops'] + sorted(filtered_data['Crop_Type'].unique().tolist())
 selected_crop_type = st.sidebar.selectbox("Select Crop Type", options=crop_type_options)
 
-# Apply Crop Type filter (skip filtering if "All Crops" is selected)
+# Apply Crop Type filter
 if selected_crop_type != 'All Crops':
     filtered_data = filtered_data[filtered_data['Crop_Type'] == selected_crop_type]
 
 # Year range filter
-year_range = st.sidebar.slider("Select Year Range", int(data['Year'].min()), int(data['Year'].max()), (2000, 2024))
+min_year = int(data['Year'].min())
+max_year = int(data['Year'].max())
+year_range = st.sidebar.slider("Select Year Range", min_year, max_year, (min_year, max_year))
+
+# Apply Year range filter
 filtered_data = filtered_data[(filtered_data['Year'] >= year_range[0]) & (filtered_data['Year'] <= year_range[1])]
 
 
 # Interactive Plot 1: Temperature vs Crop Yield
+#Step 1 Aggregate mean values of continuous variables over time. Focus on avg temp and crop yield
+mean_data_avgTemp_cropYield = filtered_data.groupby('Year').mean(numeric_only=True)[['Average_Temperature_C', 'Crop_Yield_MT_per_HA']]
+movingAvg_avgTemp_cropYield = mean_data_avgTemp_cropYield.rolling(window=5).mean()
 
 # Filter the data to focus on relevant columns for emissions
 filtered_ghg_data = data[['Year', 'CO2_Emissions_MT']].dropna()
@@ -93,7 +95,7 @@ future_years_poly = poly.transform(future_years)
 predicted_emissions = model.predict(future_years_poly)
 
 # Calculate the goal (20% reduction from the predicted 2030 emissions)
-goal_2030 = predicted_emissions[-1] * 0.8
+goal_2030 = predicted_emissions[-1] * 0.95
 
 # Create goal line (linear reduction from current to 2030 goal)
 current_year = filtered_ghg_data['Year'].max()
@@ -178,7 +180,7 @@ st.subheader("Precipitation and CO2 Emissions Over Time")
 
 
 # Create traces for Average Temperature and Crop Yield
-fig2 = go.Figure()  #FIX GRIDLINESS
+fig2 = go.Figure()  
 
 # Plot Average Temperature
 fig2.add_trace(go.Scatter(
@@ -187,7 +189,7 @@ fig2.add_trace(go.Scatter(
     mode='lines',
     name='Average Temperature (C)',
     line=dict(color='blue', width=0.7),
-    opacity=0.3
+    opacity=0.6
 ))
 
 # Plot Moving Average of Average Temperature
@@ -206,7 +208,7 @@ fig2.add_trace(go.Scatter(
     mode='lines',
     name='Crop Yield (MT/HA)',
     line=dict(color='green', width=0.7),
-    opacity=0.3,
+    opacity=0.6,
     yaxis='y2'
 ))
 
@@ -227,14 +229,17 @@ fig2.update_layout(
     yaxis=dict(
         title='Average Temperature (C)',
         titlefont=dict(color='white'),
-        tickfont=dict(color='white')
+        tickfont=dict(color='white'),
+        gridcolor='rgba(200, 200, 200, 0.4)',  # Light gray with 20% opacity
     ),
     yaxis2=dict(
         title='Crop Yield (MT/HA)',
         titlefont=dict(color='white'),
         tickfont=dict(color='white'),
         overlaying='y',
-        side='right'
+        side='right',
+        showgrid=False,
+        zeroline=False
     ),
     legend=dict(x=0.5, y=-0.2, xanchor='center', yanchor='top'),
     margin=dict(l=50, r=50, t=50, b=50),
@@ -242,22 +247,65 @@ fig2.update_layout(
     plot_bgcolor='white'
 )
 
-# Add gridlines and remove spines (axes borders)
-fig2.update_xaxes(showgrid=True, gridcolor='lightgray')
-fig2.update_yaxes(showgrid=True, gridcolor='lightgray')
-fig2.update_yaxes(showline=False)  # Disable spines
-
 # Display chart with filters applied
 st.plotly_chart(fig2)
 
+
+# Interactive Plot 6: Extreme Weather Event Correlation Matrix
+# Correlation analysis between extreme weather events and economic impact by country and region
+corr_country_region = data.groupby(['Country', 'Region']).apply(lambda group: group['Extreme_Weather_Events'].corr(group['Economic_Impact_Million_USD'])).reset_index(name='Correlation')
+
+# Create pivot table, country as rows and regions as columns
+pivot_corr_country_region = corr_country_region.pivot(index="Country", columns="Region", values="Correlation")
+
+# Create the heatmap using Plotly
+fig6 = go.Figure(data=go.Heatmap(
+    z=pivot_corr_country_region.values,
+    x=pivot_corr_country_region.columns,
+    y=pivot_corr_country_region.index,
+    colorscale='RdBu',
+    zmin=-1,
+    zmax=1,
+    zmid=0,
+    colorbar=dict(title='Correlation Coefficient'),
+    hoverongaps=False))
+
+# Add annotations to display correlation coefficients
+annotations = []
+for i, row in enumerate(pivot_corr_country_region.values):
+    for j, value in enumerate(row):
+        if not np.isnan(value):  # Check if the value is not NaN
+            annotations.append(
+                dict(
+                    x=pivot_corr_country_region.columns[j],
+                    y=pivot_corr_country_region.index[i],
+                    text=f"{value:.2f}",
+                    showarrow=False,
+                    font=dict(color='black' if abs(value) < 0.5 else 'white')
+                )
+            )
+
+# Update layout
+fig6.update_layout(
+    title='Correlation Between Extreme Weather Events and Economic Impact by Country and Region',
+    xaxis_title='Region',
+    yaxis_title='Country',
+    width=1000,
+    height=800,
+    annotations=annotations
+)
+
+# Show the plot
+st.plotly_chart(fig6)
+
 # Interactive Plot 3: Economic Impact by Region  #ADD ANNOTATIONS to columns
-st.subheader("Economic Impact by Region")
+st.subheader(f"{selected_country} Economic Impact")
 fig3 = px.bar(filtered_data, x='Region', y='Economic_Impact_Million_USD', color='Crop_Type',
               title="Economic Impact by Region and Crop Type")
 st.plotly_chart(fig3)
 
 # Interactive Plot 4: Extreme Weather Events vs Crop Yield
-st.subheader("Extreme Weather Events vs Crop Yield")
+st.subheader(f"Extreme Weather Events vs Crop Yield ({selected_country})")
 fig4 = px.scatter(filtered_data, x='Extreme_Weather_Events', y='Crop_Yield_MT_per_HA', 
                   size='Total_Precipitation_mm', color='Crop_Type', hover_name='Region',
                   title="Extreme Weather Events vs Crop Yield")
