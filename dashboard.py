@@ -5,6 +5,10 @@ import plotly.graph_objects as go
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
+# Load data
+from databases import cleaned_df, data
+
+
 
 # Set page layout to wide and adjust sidebar and alignment
 st.set_page_config(layout="wide")
@@ -21,8 +25,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Load data
-data = pd.read_csv(r'C:\Users\Shari\Desktop\Data Science Course\Challenges\team6_project3\Resources\climate_change_impact_on_agriculture_2024.csv')
+
 
 # Streamlit app structure
 st.title("Climate Change Impact on Agriculture Dashboard")
