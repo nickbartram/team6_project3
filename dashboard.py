@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.colors
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -260,16 +261,31 @@ corr_country_region = data.groupby(['Country', 'Region']).apply(lambda group: gr
 # Create pivot table, country as rows and regions as columns
 pivot_corr_country_region = corr_country_region.pivot(index="Country", columns="Region", values="Correlation")
 
+# Create a custom colorscale manually
+colorscale = [
+    [0, "#0000FF"],  # Dark Blue
+    [0.25, "#8080FF"],  # Light Blue
+    [0.45, "#CCCCFF"],  # Very Light Blue
+    [0.5, "#FFFFFF"],  # White
+    [0.55, "#FFCCCC"],  # Very Light Red
+    [0.75, "#FF8080"],  # Light Red
+    [1, "#FF0000"]  # Dark Red
+]
+
 # Create the heatmap using Plotly
 fig6 = go.Figure(data=go.Heatmap(
     z=pivot_corr_country_region.values,
     x=pivot_corr_country_region.columns,
     y=pivot_corr_country_region.index,
-    colorscale='RdBu',
+    colorscale=colorscale,
     zmin=-1,
     zmax=1,
     zmid=0,
-    colorbar=dict(title='Correlation Coefficient'),
+    colorbar=dict(
+        title='Correlation Coefficient',
+        tickvals=[-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1],
+        ticktext=['-1', '-0.75', '-0.5', '-0.25', '0', '0.25', '0.5', '0.75', '1']
+    ),
     hovertemplate='Country: %{y}<br>Region: %{x}<br>Correlation: %{z:.2f}<extra></extra>'
 ))
 
@@ -278,10 +294,10 @@ fig6.update_layout(
     title='Correlation Between Extreme Weather Events and Economic Impact by Country and Region',
     xaxis_title='Region',
     yaxis_title='Country',
-    width=1200,  # Increased width
-    height=1000,  # Increased height
-    xaxis=dict(tickangle=45),  # Rotate x-axis labels
-    yaxis=dict(tickangle=0)  # Ensure y-axis labels are horizontal
+    width=1200,
+    height=1000,
+    xaxis=dict(tickangle=45),
+    yaxis=dict(tickangle=0)
 )
 
 # Add annotations to display correlation coefficients
@@ -293,7 +309,7 @@ for i, row in enumerate(pivot_corr_country_region.values):
                 y=pivot_corr_country_region.index[i],
                 text=f"{value:.2f}",
                 showarrow=False,
-                font=dict(color='black' if abs(value) < 0.5 else 'white', size=8)  # Reduced font size
+                font=dict(color='black' if abs(value) < 0.5 else 'white', size=8)
             )
 
 # Show the plot
