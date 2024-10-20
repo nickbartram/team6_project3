@@ -356,28 +356,216 @@ st.subheader(f"Extreme Weather Events vs Crop Yield ({selected_country})")
 fig4 = px.scatter(filtered_data, x='Extreme_Weather_Events', y='Crop_Yield_MT_per_HA', 
                   size='Total_Precipitation_mm', color='Crop_Type', hover_name='Region',
                   title="Extreme Weather Events vs Crop Yield")
+fig4.update_layout(yaxis_title='Crop Yield (MT Per HA)')
 st.plotly_chart(fig4)
 
-# Adding the Animated Time Series Chart
-st.subheader("Animated Time Series: Crop Yield Over Time")
-filtered_data = filtered_data.sort_values(by='Year')  # Sort data by year for proper chronological order
 
-fig5 = px.scatter(filtered_data, 
-                  x='Average_Temperature_C', 
-                  y='Crop_Yield_MT_per_HA', 
-                  size='Extreme_Weather_Events', 
-                  color='Crop_Type', 
-                  hover_name='Region', 
-                  animation_frame='Year', 
-                  animation_group='Region', 
-                  range_x=[filtered_data['Average_Temperature_C'].min(), filtered_data['Average_Temperature_C'].max()],
-                  range_y=[filtered_data['Crop_Yield_MT_per_HA'].min(), filtered_data['Crop_Yield_MT_per_HA'].max()],
-                  title="Crop Yield vs Temperature Over Time (Animated)")
 
-# Setting axis limits to ensure proper time filtering and smoother transitions
-fig5.update_layout(xaxis_title='Average Temperature (°C)', yaxis_title='Crop Yield (MT per HA)')
+# Interactive Plot 5: Average CO2 Emissions Over Time by Country
+st.subheader("Animated Time Series: Average CO2 Emissions Over Time by Country")
+# Calculate average CO2 emissions per country per year
+climate_impact_df_avg = data.groupby(['Country', 'Year'])['CO2_Emissions_MT'].mean().reset_index()
+
+# Sort the DataFrame by Year to ensure sequential display
+climate_impact_df_avg = climate_impact_df_avg.sort_values('Year')
+
+# Calculate the overall min and max values for CO2 emissions
+min_emissions = climate_impact_df_avg['CO2_Emissions_MT'].min()
+max_emissions = climate_impact_df_avg['CO2_Emissions_MT'].max()
+
+# Create a choropleth plot with time series and fixed color scale range
+fig5 = px.choropleth(
+    climate_impact_df_avg,
+    locations='Country', 
+    locationmode='country names',
+    color='CO2_Emissions_MT',
+    hover_name='Country',
+    animation_frame='Year',
+    color_continuous_scale='Viridis_r',
+    range_color=[min_emissions, max_emissions],  # Set fixed range for color scale
+    projection='natural earth',
+    title='Average CO2 Emissions Over Time by Country'
+)
+
+# Update layout for better appearance
+fig5.update_layout(
+    width=1200,
+    height=800,
+    coloraxis_colorbar=dict(
+        title="Average CO2 Emissions (MT)",
+    ),
+    updatemenus=[{
+        'buttons': [
+            {
+                'args': [None, {'frame': {'duration': 500, 'redraw': True}, 'fromcurrent': True}],
+                'label': 'Play',
+                'method': 'animate'
+            },
+            {
+                'args': [[None], {'frame': {'duration': 0, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 0}}],
+                'label': 'Pause',
+                'method': 'animate'
+            }
+        ],
+        'direction': 'left',
+        'pad': {'r': 10, 't': 87},
+        'showactive': False,
+        'type': 'buttons',
+        'x': 0.1,
+        'xanchor': 'right',
+        'y': 0,
+        'yanchor': 'top'
+    }]
+)
+
+# Add slider
+fig5.update_layout(
+    sliders=[{
+        'active': 0,
+        'yanchor': 'top',
+        'xanchor': 'left',
+        'currentvalue': {
+            'font': {'size': 20},
+            'prefix': 'Year:',
+            'visible': True,
+            'xanchor': 'right'
+        },
+        'transition': {'duration': 300, 'easing': 'cubic-in-out'},
+        'pad': {'b': 10, 't': 50},
+        'len': 0.9,
+        'x': 0.1,
+        'y': 0,
+        'steps': [
+            {
+                'args': [[f'{year}'], {
+                    'frame': {'duration': 300, 'redraw': True},
+                    'mode': 'immediate',
+                    'transition': {'duration': 300}
+                }],
+                'label': f'{year}',
+                'method': 'animate'
+            } for year in climate_impact_df_avg['Year'].unique()
+        ]
+    }]
+)
+
+# Show the plot
 st.plotly_chart(fig5)
 
+
+# Interactive Plot 7: Average CO2 Emissions by Country Over Time
+# Calculate average CO2 emissions per country per year
+st.subheader('Average CO2 Emissions by Country Over Time')
+climate_impact_df_avg = data.groupby(['Country', 'Year'])['CO2_Emissions_MT'].mean().reset_index()
+
+# Sort the DataFrame by Year to ensure sequential display
+climate_impact_df_avg = climate_impact_df_avg.sort_values('Year')
+
+# Create a line chart with CO2 emissions over time
+fig7 = px.line(
+    climate_impact_df_avg,
+    x='Year', 
+    y='CO2_Emissions_MT',
+    color='Country',  # Line color by country
+    title=(f'Average CO2 Emissions by {selected_country} Over Time'),
+    labels={'CO2_Emissions_MT': 'CO2 Emissions (Mt)', 'Year': 'Year'}
+)
+
+# Add a dropdown menu to filter by country
+fig7.update_layout(
+    updatemenus=[
+        {
+            'buttons': [
+                {
+                    'args': [{'visible': [country == selected_country for country in climate_impact_df_avg['Country'].unique()]}],
+                    'label': selected_country,
+                    'method': 'update'
+                }
+                for selected_country in climate_impact_df_avg['Country'].unique()
+            ],
+            'direction': 'down',
+            'showactive': True,
+            'x': 0.1,
+            'xanchor': 'left',
+            'y': 1.15,
+            'yanchor': 'top'
+        }
+    ]
+)
+st.plotly_chart(fig7)
+
+# Interactive Plot 8: Average CO2 Emissions by Country Over Time
+st.subheader('Average CO2 Emissions by Country Over Time (OWID Data)')
+# Sort the DataFrame by 'year' to ensure proper animation order
+cleaned_df = cleaned_df.sort_values('year')
+
+# Create the choropleth map with animation
+fig8 = px.choropleth(
+    cleaned_df,
+    locations='country',
+    locationmode='country names',
+    color='co2',
+    hover_name='country',
+    animation_frame='year',
+    color_continuous_scale='Viridis_r',
+    projection='natural earth',
+    title='CO2 Emissions by Country Over Time (OWID Data)',
+)
+
+# Update layout for better appearance and adjust animation speed
+fig8.update_layout(
+    width=1000,
+    height=600,
+    coloraxis_colorbar=dict(
+        title="CO2 Emissions",
+        ticksuffix=" Mt",  # Correct unit based on your context
+        tickformat=",.0f"
+    ),
+    updatemenus=[
+        {
+            'type': 'buttons',
+            'buttons': [
+                {
+                    'label': 'Play',
+                    'method': 'animate',
+                    'args': [None, {
+                        'frame': {'duration': 100},  # Adjust duration here (in milliseconds)
+                        'mode': 'immediate',
+                        'transition': {'duration': 300}
+                    }]
+                },
+                {
+                    'label': 'Pause',
+                    'method': 'animate',
+                    'args': [[None], {
+                        'frame': {'duration': 0, 'redraw': False},
+                        'mode': 'immediate',
+                        'transition': {'duration': 0}
+                    }]
+                }
+            ],
+            'showactive': False,
+            'x': 0.1,
+            'y': 1.1
+        }
+    ]
+)
+
+# Show the figure
+st.plotly_chart(fig8)
+
+# Interactive Plot 9: Average CO2 Emissions by Country Over Time
+st.subheader('Average CO2 Emissions by Country Over Time')
+# Create a line chart with CO2 emissions over time
+fig9 = px.line(
+    cleaned_df,
+    x='year', 
+    y='co2',
+    color='country',  # Line color by country
+    title='Average CO2 Emissions by Country Over Time',
+    labels={'co2': 'CO2 Emissions (MT)', 'year': 'Year'}
+)
+st.plotly_chart(fig9)
 # Displaying filter details
 st.sidebar.write("Filters applied: Country - {}, Region - {}, Crop Type - {}, Year Range - {}".format(selected_country, selected_region, selected_crop_type, year_range))
 
