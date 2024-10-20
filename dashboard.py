@@ -257,7 +257,6 @@ st.plotly_chart(fig2)
 # Interactive Plot 6: Extreme Weather Event Correlation Matrix
 # Correlation analysis between extreme weather events and economic impact by country and region
 corr_country_region = data.groupby(['Country', 'Region']).apply(lambda group: group['Extreme_Weather_Events'].corr(group['Economic_Impact_Million_USD'])).reset_index(name='Correlation')
-
 # Create pivot table, country as rows and regions as columns
 pivot_corr_country_region = corr_country_region.pivot(index="Country", columns="Region", values="Correlation")
 
@@ -271,35 +270,34 @@ fig6 = go.Figure(data=go.Heatmap(
     zmax=1,
     zmid=0,
     colorbar=dict(title='Correlation Coefficient'),
-    hoverongaps=False))
-
-# Add annotations to display correlation coefficients
-annotations = []
-for i, row in enumerate(pivot_corr_country_region.values):
-    for j, value in enumerate(row):
-        if not np.isnan(value):  # Check if the value is not NaN
-            annotations.append(
-                dict(
-                    x=pivot_corr_country_region.columns[j],
-                    y=pivot_corr_country_region.index[i],
-                    text=f"{value:.2f}",
-                    showarrow=False,
-                    font=dict(color='black' if abs(value) < 0.5 else 'white')
-                )
-            )
+    hovertemplate='Country: %{y}<br>Region: %{x}<br>Correlation: %{z:.2f}<extra></extra>'
+))
 
 # Update layout
 fig6.update_layout(
     title='Correlation Between Extreme Weather Events and Economic Impact by Country and Region',
     xaxis_title='Region',
     yaxis_title='Country',
-    width=1000,
-    height=800,
-    annotations=annotations
+    width=1200,  # Increased width
+    height=1000,  # Increased height
+    xaxis=dict(tickangle=45),  # Rotate x-axis labels
+    yaxis=dict(tickangle=0)  # Ensure y-axis labels are horizontal
 )
 
+# Add annotations to display correlation coefficients
+for i, row in enumerate(pivot_corr_country_region.values):
+    for j, value in enumerate(row):
+        if not np.isnan(value):  # Check if the value is not NaN
+            fig6.add_annotation(
+                x=pivot_corr_country_region.columns[j],
+                y=pivot_corr_country_region.index[i],
+                text=f"{value:.2f}",
+                showarrow=False,
+                font=dict(color='black' if abs(value) < 0.5 else 'white', size=8)  # Reduced font size
+            )
+
 # Show the plot
-st.plotly_chart(fig6)
+st.plotly_chart(fig6, use_container_width=True)
 
 # Interactive Plot 3: Economic Impact by Region  
 # Group the data by Region and Crop_Type, summing the Economic_Impact
