@@ -68,9 +68,6 @@ filtered_data = filtered_data[(filtered_data['Year'] >= year_range[0]) & (filter
 
 
 # Interactive Plot 1: Temperature vs Crop Yield
-#Step 1 Aggregate mean values of continuous variables over time. Focus on avg temp and crop yield
-mean_data_avgTemp_cropYield = filtered_data.groupby('Year').mean(numeric_only=True)[['Average_Temperature_C', 'Crop_Yield_MT_per_HA']]
-movingAvg_avgTemp_cropYield = mean_data_avgTemp_cropYield.rolling(window=5).mean()
 
 # Filter the data to focus on relevant columns for emissions
 filtered_ghg_data = data[['Year', 'CO2_Emissions_MT']].dropna()
@@ -80,10 +77,13 @@ filtered_ghg_data = filtered_ghg_data.groupby('Year')['CO2_Emissions_MT'].mean()
 
 # Ensure the data is sorted by year
 filtered_ghg_data = filtered_ghg_data.sort_values(by='Year')
+# Calculate average CO2 emissions per year across all countries
+average_emissions = cleaned_df.groupby('year')['co2'].mean().reset_index()
+average_emissions = average_emissions.rename(columns={'year': 'Year', 'co2': 'CO2_Emissions_MT'})
 
 # Prepare data for polynomial regression model
-x = filtered_ghg_data['Year'].values.reshape(-1, 1)
-y = filtered_ghg_data['CO2_Emissions_MT'].values
+x = average_emissions['Year'].values.reshape(-1, 1)
+y = average_emissions['CO2_Emissions_MT'].values
 
 # Use polynomial features to capture non-linear trends
 poly = PolynomialFeatures(degree=2)
@@ -94,28 +94,28 @@ model = LinearRegression()
 model.fit(x_poly, y)
 
 # Predict future emissions (up to 2030 for projection)
-future_years = np.arange(data['Year'].min(), 2031).reshape(-1, 1)
+future_years = np.arange(average_emissions['Year'].min(), 2031).reshape(-1, 1)
 future_years_poly = poly.transform(future_years)
 predicted_emissions = model.predict(future_years_poly)
 
-# Calculate the goal (20% reduction from the predicted 2030 emissions)
+# Calculate the goal (5% reduction from the predicted 2030 emissions)
 goal_2030 = predicted_emissions[-1] * 0.95
 
 # Create goal line (linear reduction from current to 2030 goal)
-current_year = filtered_ghg_data['Year'].max()
-current_emissions = filtered_ghg_data.loc[filtered_ghg_data['Year'] == current_year, 'CO2_Emissions_MT'].values[0]
+current_year = average_emissions['Year'].max()
+current_emissions = average_emissions.loc[average_emissions['Year'] == current_year, 'CO2_Emissions_MT'].values[0]
 goal_years = np.arange(current_year, 2031)
 goal_emissions = np.linspace(current_emissions, goal_2030, len(goal_years))
 
 # Create a new figure for GHG emissions
 fig1 = go.Figure()
 
-# Add actual emissions line (smoothed)
+# Add actual emissions line (average across countries)
 fig1.add_trace(go.Scatter(
-    x=filtered_ghg_data['Year'],
-    y=filtered_ghg_data['CO2_Emissions_MT'],
+    x=average_emissions['Year'],
+    y=average_emissions['CO2_Emissions_MT'],
     mode='lines',
-    name='Actual CO2 Emissions',
+    name='Actual CO2 Emissions (Average)',
     line=dict(color='red', width=2)
 ))
 
@@ -145,16 +145,15 @@ on_track = final_predicted <= final_goal
 # Add status indicator
 status_color = 'green' if on_track else 'red'
 status_text = 'On Track' if on_track else 'Off Track'
-
 fig1.add_annotation(
-    x=0.98,
+    x=0.02,
     y=0.98,
     xref="paper",
     yref="paper",
     text=f"Status: {status_text}",
     showarrow=False,
     font=dict(size=16, color="white"),
-    align="center",
+    align="left",
     bordercolor=status_color,
     borderwidth=2,
     borderpad=4,
@@ -164,9 +163,9 @@ fig1.add_annotation(
 
 # Update layout for the emissions chart
 fig1.update_layout(
-    title='GHG Emissions: Actual, Predicted, and Reduction Goal',
+    title='Average Global GHG Emissions: Actual, Predicted, and Reduction Goal',
     xaxis_title='Year',
-    yaxis_title='CO2 Emissions (Million Tons)',
+    yaxis_title='Average CO2 Emissions (Million Tons)',
     plot_bgcolor='white',
     hovermode='x unified',
     xaxis=dict(showgrid=True, gridcolor='lightgray'),
@@ -179,6 +178,9 @@ st.plotly_chart(fig1)
 
  
 # Interactive Plot 2: Precipitation and CO2 Emissions Over Time
+#Step 1 Aggregate mean values of continuous variables over time. Focus on avg temp and crop yield
+mean_data_avgTemp_cropYield = filtered_data.groupby('Year').mean(numeric_only=True)[['Average_Temperature_C', 'Crop_Yield_MT_per_HA']]
+movingAvg_avgTemp_cropYield = mean_data_avgTemp_cropYield.rolling(window=5).mean()
 st.subheader("Precipitation and CO2 Emissions Over Time")
     # Calculate the moving average (5-year window)
 
