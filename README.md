@@ -77,3 +77,13 @@ We conducted an OLS regression to identify significant predictors of economic ou
 ## Conclusion
 
 This project reveals insights into how climate change affects agriculture, highlighting key trends and areas for further research, including the need to explore non-linear relationships and include additional environmental variables.
+
+
+## References
+
+1. Waqi786. (2023). *Climate Change Impact on Agriculture* [Dataset]. Kaggle. Retrieved from [https://www.kaggle.com/datasets/waqi786/climate-change-impact-on-agriculture](https://www.kaggle.com/datasets/waqi786/climate-change-impact-on-agriculture)
+   [Kaggle](https://www.kaggle.com/datasets/waqi786/climate-change-impact-on-agriculture)
+   [Kaggle](https://www.kaggle.com/code/waqi786/climate-change-agriculture-analysis)
+
+   .
+2. Ritchie, H., Roser, M., & Ortiz-Ospina, E. (2020). *CO2 and Greenhouse Gas Emissions* [Dataset]. Our World in Data. Retrieved from [https://ourworldindata.org/co2-emissions](https://ourworldindata.org/co2-emissions).
