@@ -14,17 +14,51 @@ from databases import cleaned_df, data
 # Set page layout to wide and adjust sidebar and alignment
 st.set_page_config(layout="wide")
 
-# Inject custom CSS to left-align the layout
+# Inject custom CSS for dark theme and left-aligned layout
 st.markdown("""
     <style>
+    /* Main container layout and alignment */
     .reportview-container .main .block-container {
-        max-width: 85%;  /* Adjust width */
+        max-width: 85%;
         padding-left: 10px;
         padding-right: 10px;
-        text-align: left; /* Align text to the left */
+        text-align: left;
+    }
+    
+    /* Dark theme styling */
+    .stApp {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #262730;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+    }
+    
+    /* Text input fields */
+    .stTextInput>div>div>input {
+        background-color: #262730;
+        color: #FAFAFA;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: #FFFFFF;
+    }
+    
+    /* Code blocks */
+    .stCodeBlock {
+        background-color: #262730;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
 
