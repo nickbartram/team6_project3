@@ -12,23 +12,43 @@ from databases import cleaned_df, data
 
 
 # Set page layout to wide and adjust sidebar and alignment
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                    page_title='Climate Change Impact Dashboard',
+                    initial_sidebar_state='expanded')
 
 # Inject custom CSS for dark theme and left-aligned layout
 st.markdown("""
     <style>
     /* Main container layout and alignment */
     .reportview-container .main .block-container {
-        max-width: 85%;
-        padding-left: 10px;
-        padding-right: 10px;
+        max-width: 95%;
+        padding: 1rem 1rem;
+        text-align: left;
         text-align: left;
     }
-    
+
+     /* Chart container styling */
+    .plot-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+
     /* Dark theme styling */
     .stApp {
         background-color: #0E1117;
         color: #FAFAFA;
+    }
+
+     /* Dark theme and other existing styles */
+    .stApp {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+    
+      /* Ensure consistent spacing between charts */
+    .element-container {
+        margin-bottom: 2rem !important;
     }
     
     /* Sidebar styling */
@@ -59,7 +79,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
 
 
 # Streamlit app structure
